@@ -924,6 +924,10 @@ async function gameApiFetch(endpoint, groupId) {
       'Content-Type': 'application/json',
       'Authorization': bearer ? `Bearer ${bearer}` : '',
       'Accept': '*/*',
+      'Accept-Encoding': 'gzip, deflate',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Origin': 'nui://painel',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.141 CitizenFX/1.0.0.26198 Safari/537.36'
     },
     body: JSON.stringify(body),
   });
