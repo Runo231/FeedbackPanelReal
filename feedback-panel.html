@@ -915,32 +915,10 @@ function onFactionChange() {
 /* =====================================================
    GAME API CALL
 ===================================================== */
-// Build the URL we will fetch from.  When the page is served over HTTPS the
-// browser refuses to load an "http://" resource (mixed‑content block).  There are
-// two possible fixes:
-//   * make the GAME_API endpoint available over HTTPS, or
-//   * proxy the call through the same origin (see README or server‑side code).
-//
-// This helper will automatically switch the protocol to https if the current
-// page is https, which avoids the browser error, but it only works if the
-// remote service actually supports TLS.  If it doesn't, the call will still
-// fail and you'll need to implement a proxy or enable HTTPS on the API
-// server.
-function buildGameApiUrl(endpoint) {
-  let base = GAME_API;
-  if (location.protocol === 'https:' && base.startsWith('http://')) {
-    // convert to https to avoid mixed content
-    base = base.replace(/^http:/, 'https:');
-  }
-  return `${base.replace(/\/+$/,'')}/${endpoint}`;
-}
-
 async function gameApiFetch(endpoint, groupId) {
   const bearer = getGameBearer();
   const body = { groupId, cityId: 'Real', passport: getPassport() };
-  const url = buildGameApiUrl(endpoint);
-
-  const res = await fetch(url, {
+  const res = await fetch(`${GAME_API}/${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
