@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback Panel Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #08080f;
+      --bg2:      #0e0e1c;
+      --bg3:      #151527;
+      --bg4:      #1e1e35;
+      --border:   #2a2a4a;
+      --acc:      #00f0ff;
+      --acc2:     #b400ff;
+      --acc3:     #ff4d6d;
+      --text:     #d0d0f0;
+      --text2:    #7070aa;
+      --text3:    #4a4a7a;
+      --green:    #00e676;
+      --red:      #ff3d5a;
+      --yellow:   #ffd600;
+      --glow:     0 0 20px rgba(0,240,255,0.25);
+      --glow2:    0 0 20px rgba(180,0,255,0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 10% 10%, rgba(0,240,255,0.04) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 90% 90%, rgba(180,0,255,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 24px;
+      height: 56px;
+      background: rgba(8,8,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--acc);
+      text-shadow: 0 0 12px rgba(0,240,255,0.6);
+      flex: 1;
+    }
+
+    header h1 span { color: var(--acc2); }
+
+    .hdr-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 1px;
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+
+    /* ===== LAYOUT ===== */
+    .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
+
+    /* ===== CONFIG PANEL ===== */
+    .config-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+    }
+    .config-panel.collapsed { max-height: 0; opacity: 0; border-color: transparent; margin-bottom: 0; }
+    .config-panel.expanded  { max-height: 1200px; opacity: 1; }
+
+    .config-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600; font-size: 13px; letter-spacing: 1px;
+      color: var(--text2);
+    }
+    .config-header:hover { color: var(--text); }
+    .config-header .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 8px var(--acc); }
+
+    .config-body { padding: 20px; }
+
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    @media(max-width:640px){ .config-grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text2);
+    }
+    .field input, .field select, .field textarea {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--acc);
+      box-shadow: 0 0 0 2px rgba(0,240,255,0.1);
+    }
+    .field select option { background: var(--bg3); }
+
+    /* Sets table */
+    .sets-section h3 {
+      font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text2);
+      margin-bottom: 12px;
+    }
+    .sets-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .set-row {
+      display: grid; grid-template-columns: 100px 160px 1fr auto;
+      gap: 8px; align-items: center;
+    }
+    .set-row input {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 10px;
+      color: var(--text); font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .set-row input:focus { border-color: var(--acc); }
+    .sets-empty { color: var(--text3); font-size: 12px; font-style: italic; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 18px;
+      border: none; border-radius: 6px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      cursor: pointer; transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(0,240,255,0.15), rgba(0,240,255,0.08));
+      border: 1px solid rgba(0,240,255,0.4);
+      color: var(--acc);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, rgba(0,240,255,0.25), rgba(0,240,255,0.12));
+      box-shadow: var(--glow);
+    }
+    .btn-secondary {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--acc2); }
+    .btn-danger {
+      background: transparent;
+      border: 1px solid rgba(255,61,90,0.3);
+      color: var(--red); padding: 6px 10px;
+    }
+    .btn-danger:hover { background: rgba(255,61,90,0.1); }
+    .btn-small { padding: 6px 12px; font-size: 11px; }
+    .btn-add {
+      background: rgba(0,230,118,0.08);
+      border: 1px solid rgba(0,230,118,0.25);
+      color: var(--green); font-size: 11px; padding: 7px 14px;
+    }
+    .btn-add:hover { background: rgba(0,230,118,0.14); }
+    .btn-save {
+      background: linear-gradient(135deg, rgba(180,0,255,0.2), rgba(180,0,255,0.1));
+      border: 1px solid rgba(180,0,255,0.4);
+      color: var(--acc2);
+    }
+    .btn-save:hover { box-shadow: var(--glow2); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+    .btn-toggle-config {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2); font-size: 12px; padding: 6px 14px;
+      border-radius: 6px; cursor: pointer; font-family: 'Rajdhani', sans-serif;
+      font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .btn-toggle-config:hover { color: var(--acc); border-color: var(--acc); }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 18px;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--text2);
+    }
+    .card-header .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+      border: 1px solid var(--acc); color: var(--acc);
+      background: rgba(0,240,255,0.08);
+    }
+    .card-header .step-num.done { border-color: var(--green); color: var(--green); background: rgba(0,230,118,0.08); }
+    .card-body { padding: 18px; }
+
+    /* ===== SELECTS ROW ===== */
+    .select-row { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: end; }
+    @media(max-width:580px){ .select-row { grid-template-columns: 1fr; } }
+
+    /* ===== LOG ===== */
+    .log {
+      background: #050508;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      max-height: 200px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .log:empty { display: none; }
+    .log-line { display: flex; gap: 8px; }
+    .log-time { color: var(--text3); white-space: nowrap; }
+    .log-msg  { color: var(--text2); }
+    .log-msg.ok   { color: var(--green); }
+    .log-msg.err  { color: var(--red); }
+    .log-msg.info { color: var(--acc); }
+    .log-msg.warn { color: var(--yellow); }
+
+    /* ===== PROGRESS ===== */
+    .progress-bar {
+      height: 3px; background: var(--bg3);
+      border-radius: 2px; overflow: hidden;
+      margin: 12px 0;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, var(--acc), var(--acc2));
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px rgba(0,240,255,0.5);
+    }
+
+    /* ===== OUTPUT ===== */
+    .output-textarea {
+      width: 100%;
+      background: #050508;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 180px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .output-textarea:focus { border-color: var(--acc2); }
+
+    /* ===== COMMAND BOX ===== */
+    .command-box {
+      display: flex; gap: 8px; align-items: center;
+      background: #050508;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .command-box code {
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--acc);
+      word-break: break-all;
+    }
+
+    /* ===== STATUS PILLS ===== */
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    }
+    .pill-ok  { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
+    .pill-err { background: rgba(255,61,90,0.12);  color: var(--red);   border: 1px solid rgba(255,61,90,0.25); }
+    .pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    /* ===== FACTION LIST PREVIEW ===== */
+    .faction-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px; margin-top: 14px;
+    }
+    .faction-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .faction-item:hover { border-color: var(--acc); background: var(--bg4); }
+    .faction-item.active { border-color: var(--acc); color: var(--acc); }
+    .faction-item.inactive { opacity: 0.4; cursor: default; }
+    .faction-item.inactive:hover { border-color: var(--border); background: var(--bg3); }
+    .f-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .f-dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .f-dot.off { background: var(--text3); }
+    .f-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .f-icon { font-size: 10px; opacity: 0.7; }
+
+    /* ===== DIVIDER ===== */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ===== SCROLL ===== */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .fade-in { animation: fadeIn 0.3s ease; }
+    .spinning { animation: spin 1s linear infinite; display: inline-block; }
+    .pulsing  { animation: pulse 1.5s ease infinite; }
+
+    /* ===== MISC ===== */
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .gap-top { margin-top: 14px; }
+    .gap-bot  { margin-bottom: 14px; }
+    .text-dim { color: var(--text2); font-size: 12px; }
+    .copy-success { color: var(--green); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+    select option { background: #0e0e1c; }
+
+    .orgs-status {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text2);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>FEEDBACK <span>PANEL</span> GENERATOR</h1>
+  <span class="hdr-badge">REALRP · FIVEM</span>
+  <button class="btn-toggle-config" onclick="toggleConfig()">⚙ Config</button>
+</header>
+
+<div class="app">
+
+  <!-- ===== CONFIG PANEL ===== -->
+  <div class="config-panel collapsed" id="configPanel">
+    <div class="config-header" onclick="toggleConfig()">
+      <span class="dot"></span>
+      CONFIGURACIÓN DEL SISTEMA
+    </div>
+    <div class="config-body">
+      <div class="config-grid">
+        <div class="field">
+          <label>Discord Authorization Token</label>
+          <input type="password" id="cfgDiscordAuth" placeholder="Bearer XXXXXXXX... (o sin Bearer)" />
+        </div>
+        <div class="field">
+          <label>Bearer Token (API del juego)</label>
+          <input type="password" id="cfgGameBearer" placeholder="Bearer XXXXXXXX..." />
+        </div>
+        <div class="field">
+          <label>Pasaporte (Passport)</label>
+          <input type="number" id="cfgPassport" placeholder="56218" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="sets-section">
+        <h3>🏛 Sedes / Sets — Configurables: groupId y nombre (Bearer token global arriba)</h3>
+        <div class="sets-list" id="setsList"></div>
+        <button class="btn btn-add" onclick="addSetRow()">+ Añadir Set</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="row gap-top">
+        <button class="btn btn-save" onclick="saveConfig()">💾 Guardar Configuración</button>
+        <span id="cfgSaveStatus" class="copy-success" style="display:none">✓ Guardado</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 1: LOAD ORGS ===== -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <span class="step-num" id="step1num">1</span>
+      CARGAR ORGANIZACIONES
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <button class="btn btn-primary" id="loadOrgsBtn" onclick="loadOrgs()">🔄 Cargar Organizaciones</button>
+        <span class="orgs-status" id="orgsStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 2: SELECT ===== -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <span class="step-num" id="step2num">2</span>
+      SELECCIONAR CATEGORÍA Y FACCIÓN
+    </div>
+    <div class="card-body">
+      <div class="select-row">
+        <div class="field">
+          <label>Categoría</label>
+          <select id="categorySelect" onchange="onCategoryChange()">
+            <option value="">— Primero carga orgs —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Facción (solo activas ✔)</label>
+          <select id="factionSelect" onchange="onFactionChange()">
+            <option value="">— Selecciona categoría —</option>
+          </select>
+        </div>
+      </div>
+      <div class="faction-grid" id="factionGrid"></div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 3: GENERATE ===== -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <span class="step-num" id="step3num">3</span>
+      GENERAR FEEDBACK PANEL
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <button class="btn btn-primary" id="generateBtn" onclick="generateFeedback()" disabled>⚡ Generar</button>
+        <div id="progressWrap" style="flex:1;display:none">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+        <span id="genStatus" class="orgs-status"></span>
+      </div>
+
+      <div class="log gap-top" id="logArea"></div>
+
+      <!-- OUTPUT -->
+      <div id="outputSection" style="display:none" class="gap-top fade-in">
+        <div id="panelOutputArea" style="display:none">
+          <div class="divider"></div>
+          <div class="field gap-bot">
+            <label>Feedback Panel — Edita si es necesario</label>
+            <textarea class="output-textarea" id="outputText" rows="8"></textarea>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary btn-small" onclick="copyOutput()">📋 Copiar Texto</button>
+            <span id="copyStatus" class="copy-success" style="display:none">✓ Copiado</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field gap-bot">
+          <label>Comando para el Panel</label>
+          <div class="command-box">
+            <code id="commandText">/grouporgs 0 — 5</code>
+            <button class="btn btn-secondary btn-small" onclick="copyCommand()">📋</button>
+          </div>
+        </div>
+        <span id="cmdCopyStatus" class="copy-success" style="display:none">✓ Copiado</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================
+   CONSTANTS
+===================================================== */
+const DISCORD_API = 'https://discord.com/api/v9';
+const ORGS_CHANNEL_ID = '1384998103341596682';
+const GUILD_ID = '1373653732625088622';
+const GAME_API = 'http://apireal.realrp.es:4001';
+const DELAY_MS = 3200;
+
+// default mapping of groupId -> set name (preloaded when no config exists)
+const defaultSets = [
+  { groupId: 1, name: 'Marrons', bearer: '' },
+  { groupId: 2, name: 'PurpleIce', bearer: '' },
+  { groupId: 3, name: 'Vermelhos', bearer: '' },
+  { groupId: 4, name: 'Rosas', bearer: '' },
+  { groupId: 5, name: 'Verdes', bearer: '' },
+  { groupId: 6, name: 'Warlocks', bearer: '' },
+  { groupId: 7, name: 'Cinzas', bearer: '' },
+  { groupId: 8, name: 'Redline', bearer: '' },
+  { groupId: 9, name: 'Groove', bearer: '' },
+  { groupId: 10, name: 'Franca', bearer: '' },
+  { groupId: 11, name: 'Brancos', bearer: '' },
+  { groupId: 12, name: 'Amarelos', bearer: '' },
+  { groupId: 15, name: 'Millionaire', bearer: '' },
+  { groupId: 16, name: 'Gang9', bearer: '' },
+  { groupId: 17, name: 'Azuis', bearer: '' },
+  { groupId: 18, name: 'Putaria', bearer: '' },
+  { groupId: 19, name: 'Barragem', bearer: '' },
+  { groupId: 20, name: 'Outlaws', bearer: '' },
+  { groupId: 21, name: 'Russia', bearer: '' },
+  { groupId: 23, name: 'Bahamas', bearer: '' },
+  { groupId: 24, name: 'Laranjas', bearer: '' },
+  { groupId: 25, name: 'Palazzo', bearer: '' },
+  { groupId: 28, name: 'Gringa', bearer: '' },
+  { groupId: 29, name: 'Vagos', bearer: '' },
+  { groupId: 30, name: 'Luxor', bearer: '' },
+  { groupId: 31, name: 'Bellagio', bearer: '' },
+  { groupId: 32, name: 'Mercenarios', bearer: '' },
+  { groupId: 33, name: 'Galaxy', bearer: '' },
+  { groupId: 35, name: 'TopGear', bearer: '' },
+  { groupId: 38, name: 'SonsofAnarchy', bearer: '' },
+  { groupId: 41, name: 'Sindicato', bearer: '' },
+  { groupId: 42, name: 'China', bearer: '' },
+  { groupId: 44, name: 'DriftKing', bearer: '' },
+  { groupId: 45, name: 'Israel', bearer: '' },
+  { groupId: 46, name: 'Umbrella', bearer: '' },
+  { groupId: 47, name: 'Italia', bearer: '' },
+  { groupId: 49, name: 'Overdrive', bearer: '' },
+  { groupId: 50, name: 'Playboy', bearer: '' },
+  { groupId: 51, name: 'Roxos', bearer: '' },
+  { groupId: 52, name: 'Bennys', bearer: '' },
+  { groupId: 53, name: 'Mexico', bearer: '' },
+  { groupId: 81, name: 'Tequilas', bearer: '' },
+  { groupId: 73, name: 'Virtude', bearer: '' },
+  { groupId: 85, name: 'Caribe', bearer: '' },
+  { groupId: 62, name: 'Inglaterra', bearer: '' },
+  { groupId: 79, name: 'Gang4', bearer: '' },
+  { groupId: 91, name: 'Gang6', bearer: '' },
+  { groupId: 64, name: 'Fazendinha', bearer: '' },
+];
+
+/* =====================================================
+   STATE
+===================================================== */
+let orgCategories = [];
+let selectedFaction = null;   // { id, qgCode, name, categoryName }
+let sets = [];                // [{name, groupId, bearer}] (groupId editable per set)
+let configOpen = false;
+
+/* =====================================================
+   UTILITIES
+===================================================== */
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function now() {
+  return new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function log(msg, type='') {
+  const el = document.getElementById('logArea');
+  const line = document.createElement('div');
+  line.className = 'log-line fade-in';
+  line.innerHTML = `<span class="log-time">[${now()}]</span><span class="log-msg ${type}">${msg}</span>`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() { document.getElementById('logArea').innerHTML = ''; }
+
+function setProgress(pct) {
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function getMondayOfCurrentWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function parseRecordDate(dateStr) {
+  // "22/02 - 02h:21" or "26/02 - 05h55"
+  try {
+    const parts = dateStr.split(' - ')[0].trim();
+    const [dd, mm] = parts.split('/').map(Number);
+    const year = new Date().getFullYear();
+    return new Date(year, mm - 1, dd);
+  } catch { return null; }
+}
+
+function parseFarmAmount(amountObj) {
+  // Get the first numeric value in the amount object
+  if (!amountObj) return 0;
+  const keys = Object.keys(amountObj);
+  if (!keys.length) return 0;
+  // Sum all provided amounts
+  return Object.values(amountObj).reduce((a, b) => a + (b || 0), 0);
+}
+
+function isLastLoginInactive(lastLogin) {
+  // consider inactive only when it's 2d or more (hace 2d, 3d, ...)
+  if (!lastLogin) return false;
+  const m = lastLogin.match(/hace\s*(\d+)d/);
+  if (!m) return false;
+  const days = parseInt(m[1], 10);
+  return days >= 2;
+}
+
+function roleLabel(role) {
+  const map = { 1: '00', 2: '01', 3: '02', 4: '03' };
+  return map[role] || `0${role}`;
+}
+
+/* =====================================================
+   CONFIG
+===================================================== */
+function loadConfig() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('fpg_config') || '{}');
+    document.getElementById('cfgDiscordAuth').value = cfg.discordAuth || '';
+    document.getElementById('cfgPassport').value = cfg.passport || '';
+    // global bearer token for game API (same idea as Discord token)
+    document.getElementById('cfgGameBearer').value = cfg.gameBearer || '';
+    sets = cfg.sets || [];
+    // if no sets configured, preload defaults
+    if (!sets.length) {
+      sets = defaultSets.slice();
+    }
+    renderSetsList();
+  } catch {
+    sets = defaultSets.slice();
+    renderSetsList();
+  }
+}
+
+function saveConfig() {
+  const cfg = {
+    discordAuth: document.getElementById('cfgDiscordAuth').value.trim(),
+    passport: parseInt(document.getElementById('cfgPassport').value) || 0,
+    gameBearer: document.getElementById('cfgGameBearer').value.trim(),
+    sets: sets,
+  };
+  localStorage.setItem('fpg_config', JSON.stringify(cfg));
+  const s = document.getElementById('cfgSaveStatus');
+  s.style.display = 'inline';
+  setTimeout(() => s.style.display = 'none', 2000);
+}
+
+function getConfig() {
+  return JSON.parse(localStorage.getItem('fpg_config') || '{}');
+}
+
+function getDiscordAuth() {
+  let auth = document.getElementById('cfgDiscordAuth').value.trim();
+  if (!auth) auth = getConfig().discordAuth || '';
+  if (!auth.toLowerCase().startsWith('bearer ') && !auth.toLowerCase().startsWith('bot ')) {
+    auth = auth; // user's own token, no prefix needed
+  }
+  return auth;
+}
+
+function getPassport() {
+  let p = parseInt(document.getElementById('cfgPassport').value);
+  if (!p) p = getConfig().passport || 0;
+  return p;
+}
+
+function getGameBearer() {
+  let b = document.getElementById('cfgGameBearer').value.trim();
+  if (!b) b = getConfig().gameBearer || '';
+  return b;
+}
+
+// previously used to fetch bearer per set; now bearer is global
+function getBearerForSet(/*setName*/) {
+  return getGameBearer();
+}
+
+function addSetRow(name='', groupId='', bearer='') {
+  sets.push({ name, groupId, bearer });
+  renderSetsList();
+}
+
+function removeSetRow(idx) {
+  sets.splice(idx, 1);
+  renderSetsList();
+}
+
+function renderSetsList() {
+  const el = document.getElementById('setsList');
+  if (!sets.length) {
+    el.innerHTML = '<div class="sets-empty">No hay sets configurados</div>';
+    return;
+  }
+  el.innerHTML = sets.map((s, i) => `
+    <div class="set-row" style="grid-template-columns:100px 160px 1fr auto;">
+      <input type="number" placeholder="groupId"
+        value="${escHtml(s.groupId)}"
+        oninput="sets[${i}].groupId = this.value"
+        style="width:80px;"
+      />
+      <input type="text" placeholder="Nombre (ej: Luxor)"
+        value="${escHtml(s.name)}"
+        oninput="sets[${i}].name = this.value"
+      />
+      <input type="password" placeholder="Bearer Token de la API"
+        value="${escHtml(s.bearer)}"
+        oninput="sets[${i}].bearer = this.value"
+      />
+      <button class="btn btn-danger" onclick="removeSetRow(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleConfig() {
+  configOpen = !configOpen;
+  const p = document.getElementById('configPanel');
+  p.className = 'config-panel ' + (configOpen ? 'expanded' : 'collapsed');
+}
+
+/* =====================================================
+   DISCORD FETCH
+===================================================== */
+async function discordFetch(url) {
+  const auth = getDiscordAuth();
+  const res = await fetch(url, {
+    headers: { 'Authorization': auth, 'Content-Type': 'application/json' }
+  });
+  if (!res.ok) throw new Error(`Discord ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
+/* =====================================================
+   PARSE ORG MESSAGE (ANSI)
+===================================================== */
+function parseOrgMessage(content) {
+  // Strip ANSI escape sequences
+  const stripped = content.replace(/\[[\d;]*m/g, '').replace(/⁨|⁩/g, '');
+  // Remove code block markers
+  const clean = stripped.replace(/```ansi\n?/gi, '').replace(/```\n?/g, '');
+
+  const categories = [];
+  let current = null;
+
+  for (const rawLine of clean.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    // Category header: "FACs de X < N >"
+    const catM = line.match(/FACs de\s+(.+?)\s*<\s*(\d+)\s*>/i);
+    if (catM) {
+      current = { name: catM[1].trim(), limit: parseInt(catM[2]), factions: [] };
+      categories.push(current);
+      continue;
+    }
+
+    // Faction line: "QG_XX - Name [♛][✔/✖]" (optional trailing spaces/chars)
+    const facM = line.match(/QG_(\d+)\s*[-–]\s*(.+?)\s*(♛)?\s*([✔✖✎])\s*$/u);
+    if (facM && current) {
+      current.factions.push({
+        id: parseInt(facM[1]),
+        qgCode: `QG_${facM[1]}`,
+        name: facM[2].replace(/\s+/g,' ').trim(),
+        commercial: !!facM[3],
+        active: facM[4] === '✔',
+      });
+    }
+  }
+  return categories;
+}
+
+/* =====================================================
+   LOAD ORGS (STEP 1)
+===================================================== */
+async function loadOrgs() {
+  const btn = document.getElementById('loadOrgsBtn');
+  const status = document.getElementById('orgsStatus');
+  btn.disabled = true;
+  status.innerHTML = '<span class="pulsing">⏳ Cargando...</span>';
+
+  try {
+    const msgs = await discordFetch(
+      `${DISCORD_API}/channels/${ORGS_CHANNEL_ID}/messages?limit=1`
+    );
+    if (!msgs || !msgs.length) throw new Error('Sin mensajes en el canal');
+
+    const content = msgs[0].content;
+    orgCategories = parseOrgMessage(content);
+
+    if (!orgCategories.length) throw new Error('No se pudo parsear el mensaje de orgs');
+
+    // Populate category select
+    const catSel = document.getElementById('categorySelect');
+    catSel.innerHTML = '<option value="">— Selecciona categoría —</option>' +
+      orgCategories.map(c =>
+        `<option value="${escHtml(c.name)}">${escHtml(c.name)} (${c.factions.filter(f=>f.active).length} activas / ${c.factions.length})</option>`
+      ).join('');
+
+    const total = orgCategories.reduce((a,c) => a + c.factions.length, 0);
+    const activos = orgCategories.reduce((a,c) => a + c.factions.filter(f=>f.active).length, 0);
+    status.innerHTML = `<span style="color:var(--green)">✓ ${total} FACs cargadas — ${activos} activas</span>`;
+
+    document.getElementById('step1num').className = 'step-num done';
+
+  } catch(e) {
+    status.innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
+    console.error(e);
+  }
+
+  btn.disabled = false;
+}
+
+/* =====================================================
+   CATEGORY / FACTION SELECTS
+===================================================== */
+function onCategoryChange() {
+  const name = document.getElementById('categorySelect').value;
+  const cat = orgCategories.find(c => c.name === name);
+  const sel = document.getElementById('factionSelect');
+  const grid = document.getElementById('factionGrid');
+
+  selectedFaction = null;
+  document.getElementById('generateBtn').disabled = true;
+
+  if (!cat) {
+    sel.innerHTML = '<option value="">— Selecciona categoría —</option>';
+    grid.innerHTML = '';
+    return;
+  }
+
+  const active = cat.factions.filter(f => f.active);
+  sel.innerHTML = '<option value="">— Elige facción —</option>' +
+    cat.factions.map(f =>
+      `<option value="${f.qgCode}" ${!f.active ? 'disabled' : ''}>${f.qgCode} - ${escHtml(f.name)}${f.commercial?' ♛':''} ${f.active?'✔':'✖'}</option>`
+    ).join('');
+
+  // Render grid
+  grid.innerHTML = cat.factions.map(f => `
+    <div class="faction-item ${f.active?'':'inactive'}" onclick="${f.active?`selectFactionFromGrid('${f.qgCode}')`:''}" id="fi_${f.qgCode}">
+      <span class="f-dot ${f.active?'on':'off'}"></span>
+      <span class="f-name">${escHtml(f.qgCode)} · ${escHtml(f.name)}</span>
+      ${f.commercial ? '<span class="f-icon">♛</span>' : ''}
+    </div>
+  `).join('');
+}
+
+function selectFactionFromGrid(qgCode) {
+  document.getElementById('factionSelect').value = qgCode;
+  onFactionChange();
+  // highlight
+  document.querySelectorAll('.faction-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(`fi_${qgCode}`);
+  if (el) el.classList.add('active');
+}
+
+function onFactionChange() {
+  const qgCode = document.getElementById('factionSelect').value;
+  const catName = document.getElementById('categorySelect').value;
+  const cat = orgCategories.find(c => c.name === catName);
+  if (!cat || !qgCode) { selectedFaction = null; document.getElementById('generateBtn').disabled = true; return; }
+
+  const fac = cat.factions.find(f => f.qgCode === qgCode);
+  if (!fac) return;
+  selectedFaction = { ...fac, categoryName: catName };
+  document.getElementById('generateBtn').disabled = false;
+  // highlight grid
+  document.querySelectorAll('.faction-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(`fi_${fac.qgCode}`);
+  if (el) el.classList.add('active');
+}
+
+/* =====================================================
+   GAME API CALL
+===================================================== */
+async function gameApiFetch(endpoint, groupId) {
+  const bearer = getGameBearer();
+  const body = { groupId, cityId: 'Real', passport: getPassport() };
+  const res = await fetch(`${GAME_API}/${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': bearer ? `Bearer ${bearer}` : '',
+      'Accept': '*/*',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API ${endpoint} → ${res.status}`);
+  return res.json();
+}
+
+/* =====================================================
+   FIND QG CHANNEL IN GUILD
+===================================================== */
+async function findQGChannel(qgCode) {
+  // qgCode = "QG_22" → look for channel name containing "qg_22"
+  const channels = await discordFetch(`${DISCORD_API}/guilds/${GUILD_ID}/channels`);
+  const target = qgCode.toLowerCase();
+  const ch = channels.find(c => c.name && c.name.toLowerCase().includes(target));
+  return ch || null;
+}
+
+/* =====================================================
+   GET LEADER INFO FROM CHANNEL
+===================================================== */
+async function getLeaderInfo(channelId) {
+  // Get recent messages and find one with FECHA EN QUE ASUMIÓ
+  const msgs = await discordFetch(
+    `${DISCORD_API}/channels/${channelId}/messages?limit=50`
+  );
+  for (const m of msgs) {
+    if (m.content && m.content.includes('FECHA EN QUE ASUMIÓ LA FACCIÓN')) {
+      // Extract date after colon
+      const match = m.content.match(/FECHA EN QUE ASUMI[OÓ] LA FACCI[OÓ]N\s*[:：]\s*(.+)/i);
+      if (match) return match[1].trim();
+    }
+    // Also check embeds
+    if (m.embeds) {
+      for (const emb of m.embeds) {
+        const fullText = JSON.stringify(emb);
+        const match = fullText.match(/FECHA EN QUE ASUMI[OÓ] LA FACCI[OÓ]N[^:]*[:：]?\s*"?(.+?)["\\n]/i);
+        if (match) return match[1].trim();
+      }
+    }
+  }
+  return null;
+}
+
+/* =====================================================
+   PROCESS FARM DATA
+===================================================== */
+function evaluateFarm(farmHistory, farmGoal) {
+  const monday = getMondayOfCurrentWeek();
+  const today = new Date();
+  const daysPassed = Math.floor((today - monday) / (1000*60*60*24)) + 1; // inclusive
+
+  // collect unique passports active this week
+  const byPassport = {};
+  // also track success per passport-date
+  const success = {};
+
+  for (const record of farmHistory) {
+    const d = parseRecordDate(record.date);
+    if (!d || d < monday) continue;
+    const p = record.passport;
+    if (!byPassport[p]) byPassport[p] = true;
+    const dayKey = d.toDateString();
+    const combo = `${p}||${dayKey}`;
+    success[combo] = (success[combo] || 0) + parseFarmAmount(record.amount);
+  }
+
+  const passports = Object.keys(byPassport);
+  const playerCount = passports.length;
+  if (playerCount === 0) return { status:'Pobre', actual:0, possible:0 };
+  const possible = playerCount * daysPassed;
+
+  let actual = 0;
+  for (const combo in success) {
+    if (success[combo] >= farmGoal) actual++;
+  }
+
+  let status;
+  const half = possible / 2;
+  if (actual > half + 2) status = 'Bueno';
+  else if (actual >= half - 2 && actual <= half + 2) status = 'Normal';
+  else status = 'Pobre';
+
+  return { status, actual, possible };
+}
+
+/* =====================================================
+   PROCESS LEADERS
+===================================================== */
+function evaluateLeaders(players, orgPositions) {
+  const leaders = players.filter(p => p.role >= 1 && p.role <= 4);
+  if (!leaders.length) return 'No';
+
+  const inactive = leaders.filter(p => isLastLoginInactive(p.lastLogin));
+
+  if (inactive.length === leaders.length) return 'No';
+
+  if (!inactive.length) return 'Sí';
+
+  const list = inactive.map(p => {
+    const roleName = roleLabel(p.role);
+    // strip asterisks and trim spaces from name
+    const nameClean = (p.name || '').replace(/\*/g, '').trim();
+    return `${nameClean} (${roleName}) - ${p.lastLogin}`;
+  }).join(', ');
+  return `Sí, menos ${list}`.trim();
+}
+
+/* =====================================================
+   PROCESS RECRUITMENT
+===================================================== */
+function evaluateRecruitment(recruitHistory) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const countDay = {};
+
+  for (const r of recruitHistory) {
+    // Exclude self-recruits (passport 1)
+    if (r.recruiter && r.recruiter.passport === 1) continue;
+    const d = parseRecordDate(r.date);
+    if (!d) continue;
+    const key = d.getTime();
+    if (key === today.getTime() || key === yesterday.getTime()) {
+      countDay[key] = (countDay[key] || 0) + 1;
+    }
+  }
+
+  const todayKey = today.getTime();
+  const yesterdayKey = yesterday.getTime();
+  const todayCount = countDay[todayKey] || 0;
+  const yesterdayCount = countDay[yesterdayKey] || 0;
+  const maxCount = Math.max(todayCount, yesterdayCount);
+
+  let result;
+  if (maxCount > 10) result = 'Bueno';
+  else if (maxCount === 10) result = 'Normal';
+  else result = 'Pobre';
+
+  return { result, todayCount, yesterdayCount };
+}
+
+/* =====================================================
+   PROCESS ECONOMY
+===================================================== */
+function evaluateEconomy(bankAmount) {
+  if (bankAmount >= 100_000_000) return 'Bueno';
+  if (bankAmount >= 50_000_000)  return 'Normal';
+  return 'Pobre';
+}
+
+/* =====================================================
+   GENERATE FEEDBACK
+===================================================== */
+async function generateFeedback() {
+  if (!selectedFaction) return;
+
+  clearLog();
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  // show output section early so the command box is visible as soon as the user clicks GENERAR
+  document.getElementById('outputSection').style.display = 'block';
+  // hide feedback textarea until final step
+  document.getElementById('panelOutputArea').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'flex';
+  setProgress(0);
+
+  const { id: qgId, qgCode, name: facName } = selectedFaction;
+  // look up configured groupId for this set by name
+  let groupId = qgId;
+  const setCfg = sets.find(s => s.name && facName && s.name.trim().toLowerCase() === facName.trim().toLowerCase());
+  if (setCfg && setCfg.groupId) {
+    groupId = parseInt(setCfg.groupId) || groupId;
+  }
+  const bearer = getGameBearer();
+
+  // build command early so user sees it immediately
+  const passport = getPassport();
+  document.getElementById('commandText').textContent = `/grouporgs ${passport} ${facName} 5`;
+
+  log(`Iniciando generación para ${qgCode} - ${facName} (groupId=${groupId})`, 'info');
+  if (!bearer) log(`⚠ Sin bearer token global — la API del juego puede fallar`, 'warn');
+
+  let entregaDate = '—';
+  let lideres = 'No';
+  let farmeo = 'Pobre';
+  let farmActual = 0, farmPossible = 0;
+  let reclutamiento = 'Pobre';
+  let recToday = 0, recYesterday = 0;
+  let economia = 'Pobre';
+
+  try {
+    // ─── STEP A: Find QG channel and get leader date ───
+    log(`Buscando canal ${qgCode} en el servidor...`);
+    setProgress(10);
+    try {
+      const ch = await findQGChannel(qgCode);
+      if (ch) {
+        log(`Canal encontrado: #${ch.name} (${ch.id})`, 'ok');
+        await sleep(DELAY_MS);
+        setProgress(18);
+        log(`Buscando mensaje de Infos Lider...`);
+        const fecha = await getLeaderInfo(ch.id);
+        if (fecha) {
+          // remove any stray asterisks and trim whitespace
+          entregaDate = fecha.replace(/\*/g,'').trim();
+          log(`Fecha encontrada: ${entregaDate}`, 'ok');
+        } else {
+          log(`No se encontró FECHA EN QUE ASUMIÓ — pondrá "—"`, 'warn');
+        }
+      } else {
+        log(`No se encontró canal para ${qgCode}`, 'warn');
+      }
+    } catch(e) {
+      log(`Error buscando canal: ${e.message}`, 'err');
+    }
+
+    await sleep(DELAY_MS);
+    setProgress(30);
+
+    // ─── STEP B: get-players ───
+    log(`Consultando get-players (groupId=${groupId})...`);
+    try {
+      const pData = await gameApiFetch('get-players', groupId);
+      if (pData && pData.data) {
+        lideres = evaluateLeaders(pData.data.playerInfo || [], pData.data.orgPositions || []);
+        log(`Líderes evaluados: ${lideres}`, 'ok');
+      }
+    } catch(e) {
+      log(`Error get-players: ${e.message}`, 'err');
+    }
+
+    await sleep(DELAY_MS);
+    setProgress(50);
+
+    // ─── STEP C: get-home-info (farmGoal + bankAmount) ───
+    log(`Consultando get-home-info...`);
+    let farmGoal = 1500;
+    try {
+      const homeData = await gameApiFetch('get-home-info', groupId);
+      if (homeData && homeData.data && homeData.data.group) {
+        farmGoal = homeData.data.group.farmGoal || 1500;
+        const bank = homeData.data.group.bankAmount || 0;
+        economia = evaluateEconomy(bank);
+        log(`farmGoal=${farmGoal}, bankAmount=${bank.toLocaleString()} → Economía: ${economia}`, 'ok');
+      }
+    } catch(e) {
+      log(`Error get-home-info: ${e.message}`, 'err');
+    }
+
+    await sleep(DELAY_MS);
+    setProgress(65);
+
+    // ─── STEP D: get-farm-history ───
+    log(`Consultando get-farm-history...`);
+    try {
+      const farmData = await gameApiFetch('get-farm-history', groupId);
+      if (farmData && farmData.data) {
+        const farmEval = evaluateFarm(farmData.data, farmGoal);
+        farmeo = farmEval.status;
+        farmActual = farmEval.actual;
+        farmPossible = farmEval.possible;
+        log(`Farmeo evaluado: ${farmeo} (${farmActual} de ${farmPossible})`, 'ok');
+      }
+    } catch(e) {
+      log(`Error get-farm-history: ${e.message}`, 'err');
+    }
+
+    await sleep(DELAY_MS);
+    setProgress(82);
+
+    // ─── STEP E: get-recruit-info ───
+    log(`Consultando get-recruit-info...`);
+    try {
+      const recData = await gameApiFetch('get-recruit-info', groupId);
+      if (recData && recData.data && recData.data.history) {
+        const recEval = evaluateRecruitment(recData.data.history);
+        reclutamiento = recEval.result;
+        recToday = recEval.todayCount;
+        recYesterday = recEval.yesterdayCount;
+        log(`Reclutamiento evaluado: ${reclutamiento} (hoy ${recEval.todayCount}, ayer ${recEval.yesterdayCount})`, 'ok');
+      }
+    } catch(e) {
+      log(`Error get-recruit-info: ${e.message}`, 'err');
+    }
+
+    setProgress(100);
+    log(`✓ Todos los datos recopilados`, 'ok');
+
+  } catch(e) {
+    log(`Error general: ${e.message}`, 'err');
+  }
+
+  // ─── BUILD OUTPUT ───
+  // passport already fetched earlier for command
+  // note: counts are shown in log only, output uses plain result
+  const output = [
+    `Lideres Activos: ${lideres}`,
+    `Farmeo: ${farmeo}`,
+    `Reclutamiento: ${reclutamiento}`,
+    `Economía: ${economia}`,
+    `Entrega: ${entregaDate}`,
+    `Foto del panel:`,
+  ].join('\n');
+
+  document.getElementById('outputText').value = output;
+  document.getElementById('commandText').textContent = `/grouporgs ${passport} ${facName} 5`;
+  // reveal feedback textarea now that data collection finished
+  document.getElementById('panelOutputArea').style.display = 'block';
+  document.getElementById('outputSection').style.display = 'block';
+  document.getElementById('step3num').className = 'step-num done';
+  document.getElementById('step2num').className = 'step-num done';
+  document.getElementById('genStatus').innerHTML = `<span style="color:var(--green)">✓ Generado</span>`;
+
+  btn.disabled = false;
+  document.getElementById('progressWrap').style.display = 'none';
+
+  // Scroll to output
+  document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* =====================================================
+   COPY HELPERS
+===================================================== */
+function copyOutput() {
+  navigator.clipboard.writeText(document.getElementById('outputText').value);
+  const s = document.getElementById('copyStatus');
+  s.style.display = 'inline'; setTimeout(() => s.style.display = 'none', 2000);
+}
+
+function copyCommand() {
+  navigator.clipboard.writeText(document.getElementById('commandText').textContent);
+  const s = document.getElementById('cmdCopyStatus');
+  s.style.display = 'inline'; setTimeout(() => s.style.display = 'none', 2000);
+}
+
+/* =====================================================
+   INIT
+===================================================== */
+loadConfig();
+</script>
+</body>
+</html>
